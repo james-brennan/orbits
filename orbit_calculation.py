@@ -21,6 +21,10 @@ def perdelta(start, end, delta):
         yield curr
         curr += delta
 
+#class orbit(object):
+
+
+
 """
     Orbital overpass instance for a location, time etc
 """
@@ -130,6 +134,33 @@ class overpass(object):
         """
         probably also need to bound these between -180..180 and -90..90
         """
+        """
+        TRY ALTERNATIVE IMPLEMENTATION USING HAVERSINE FORUMLA
+        http://www.movable-type.co.uk/scripts/latlong.html
+        http://stackoverflow.com/questions/7222382/get-lat-long-given-current-point-distance-and-bearing
+        """
+        R = 6378137.0 #Radius of the Earth [m]
+        brng = self.heading - 90
+        brng = (brng + 360) % 360
+        d = self.swath_width / 2.0 #Distance [m]
+        lat1 = np.radians(self.lat)
+        lon1 = np.radians(self.long)
+        lat2 = np.arcsin( np.sin(lat1)*np.cos(d/R) +
+             np.cos(lat1)*np.sin(d/R)*np.cos(brng))
+
+        lon2 = lon1 + np.arctan2(np.sin(brng)*np.sin(d/R)*np.cos(lat1),
+                             np.cos(d/R)-np.sin(lat1)*np.sin(lat2))
+        # repeat with reverse Bearing
+        brng = self.heading + 90
+        brng = (brng + 360) % 360
+        lat3 = np.arcsin( np.sin(lat1)*np.cos(d/R) +
+             np.cos(lat1)*np.sin(d/R)*np.cos(brng))
+
+        lon3 = lon1 + np.arctan2(np.sin(brng)*np.sin(d/R)*np.cos(lat1),
+                             np.cos(d/R)-np.sin(lat1)*np.sin(lat2))
+        # use as edges
+        #self.lats = np.degrees([lat2, lat3])
+        #self.lons =  np.degrees([lon2, lon3])
 
 
     def only_daytime_overpasses(self, sun):
