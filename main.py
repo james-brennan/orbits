@@ -22,10 +22,10 @@ def main():
         2. Append to shapefile
     3. Save shapefile
     """
-    #name = "TERRA"
-    #line1 = "1 25994U 99068A   16048.43680378  .00000258  00000-0  67198-4 0  9999"
-    #line2 = "2 25994  98.1982 124.4247 0001352 105.3907 254.7441 14.57126067859938"
-    #TERRA = ephem.readtle(name, line1, line2)
+    name = "TERRA"
+    line1 = "1 25994U 99068A   16048.43680378  .00000258  00000-0  67198-4 0  9999"
+    line2 = "2 25994  98.1982 124.4247 0001352 105.3907 254.7441 14.57126067859938"
+    TERRA = ephem.readtle(name, line1, line2)
     
 
     # Landsat 8
@@ -49,7 +49,7 @@ def main():
 
     orbit_id = 0
     # need to do splitted by hemisphere unfortunately..
-    for orbit in make_an_orbit(LD8):
+    for orbit in make_an_orbit(TERRA):
         #import pdb; pdb.set_trace()
         if len(orbit) > 1:
             """
@@ -65,12 +65,12 @@ def main():
                 overpass.derive_swath_width(fov)
 
             # calculate heading is trickier...
-            for ov in xrange(len(orbit[:-1])):
-                # need to calculate difference in location between current and next
-                orbit[ov].calculate_heading(orbit[ov+1])
-                orbit[ov].calculate_swath_edges()
+            #for ov in xrange(len(orbit[:-1])):
+            #    # need to calculate difference in location between current and next
+            #    orbit[ov].calculate_heading(orbit[ov+1])
+            #    orbit[ov].calculate_swath_edges()
             # throw away last overpass as no heading info possible
-            orbit.pop()
+            #orbit.pop()
             #import pylab as plt
             #plt.plot([o.heading for o in orbit])
             #import pdb; pdb.set_trace()
@@ -115,7 +115,7 @@ def main():
     swaths = swaths.set_index(keys="DateTime")
     #swaths.set_index(keys="DateTime")
     #import pdb; pdb.set_trace()
-    swaths.to_csv("orbits.csv")
+    swaths.to_csv("orbits.csv", header=False)
 
 
 if __name__ == "__main__":

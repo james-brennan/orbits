@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 """
 
 Minimal working example...
 
 """
+import utm
 import ephem
 import datetime
 import numpy as np
@@ -25,6 +28,49 @@ def perdelta(start, end, delta):
 
 
 
+
+
+"""
+
+Method to make orbit
+split when either descending or ascending and return
+
+
+"""
+def make_an_orbit(sensor_pyephem, get_west = False):
+    overpasses = []
+    eclipsed = False
+
+    start = datetime.datetime(2016, 1, 1, 0,0,0,0)
+    end =  datetime.datetime(2017, 1, 1, 0,0,0,0)
+    delta = datetime.timedelta(minutes=1)
+    """
+    satelitte viewing day...
+    """
+    for time in perdelta(start, end, delta):
+        ov = get_overpass(sensor_pyephem, time)
+        overpasses.append(ov)
+        """
+        Theory:
+        if the satelitte has been eclipsed it has travelled behind
+        the earth and therefore over the top... or bottom
+        """
+        #if (ov.west == get_west) or (ov.eclipsed) or not ((ov.lat > -70) & (ov.lat < 70)):
+        if (ov.eclipsed): # or  not ((ov.lat > -70) & (ov.lat < 70)):
+            """
+            Is shadowed by the earth...
+            so good point to split and yield some overpasses
+            """
+            eclipsed = True
+            # remove it
+            overpasses.pop()
+            yield overpasses
+            #empty overpasses
+            overpasses = []
+            # change start time...
+            start = time
+
+
 """
     Orbital overpass instance for a location, time etc
 """
@@ -32,7 +78,7 @@ class overpass(object):
     """
     Class to store overpass for a location
     """
-    def __init__(self, lat, long, datetime, elevation, eclipsed):
+    def __init__(self, lat, long, datetime, elevation, eclipsed, west):
         self.lat = lat
         self.long = long
         self.datetime = datetime
@@ -44,6 +90,8 @@ class overpass(object):
         self.lats = None
         self.lons = None
         self.heading = None
+        self.true_heading = None
+        self.west = west
 
     def derive_swath_width(self, fov):
         """
@@ -95,6 +143,7 @@ class overpass(object):
         initial_bearing = np.arctan2(x, y)
         # make into a compass bearing
         initial_bearing = np.degrees(initial_bearing)
+        self.true_heading  = initial_bearing
         compass_bearing = (initial_bearing + 360) % 360
         self.heading = compass_bearing
 
@@ -128,9 +177,22 @@ class overpass(object):
         Do perp2
         """
         destination2 = VincentyDistance(meters=distance).destination(origin, perp2)
-        # use as edges
+        """ 
+        Save as utm easting and northings...
+
+        """
+        #destination1 = utm.from_latlon(*destination1)
+        #destination2 = utm.from_latlon(*destination2)
         self.lats = [destination1[0], destination2[0]]
-        self.lons = [destination1[1], destination2[1]]
+        self.lons = [destination1[1], destination2[1]]         
+        #import pdb; pdb.set_trace()
+        #if destination1[1] < destination2[1]:
+        #    # use as edges
+        #    self.lats = [destination1[0], destination2[0]]
+        #    self.lons = [destination1[1], destination2[1]]
+        #else:
+        #    self.lats = [destination2[0], destination1[0]]
+        #    self.lons = [destination2[1], destination1[1]]           
         """
         probably also need to bound these between -180..180 and -90..90
         """
@@ -235,7 +297,9 @@ def get_overpass(orbital, time):
     for the given pyephem orbital
     """
     orbital.compute(time)
+    west = orbital.sublong < 0
     the_overpass = overpass( orbital.sublat / ephem.degree,
                              orbital.sublong / ephem.degree,
-                             time, orbital.elevation, orbital.eclipsed)
+                             time, orbital.elevation, orbital.eclipsed,
+                             west)
     return the_overpass

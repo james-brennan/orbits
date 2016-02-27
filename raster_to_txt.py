@@ -4,7 +4,7 @@
 import gdal
 import numpy as np
 
-f = gdal.Open("./data/land.tif")
+f = gdal.Open("./land_0.25.tif")
 geo = f.GetGeoTransform()
 
 data = f.ReadAsArray()
